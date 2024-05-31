@@ -4,3 +4,6 @@ fallout_content/YouTube_spanish
 fallout_content/PDFs
 
 .streamlit/
+
+.venv
+.env

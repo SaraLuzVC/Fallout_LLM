@@ -1,4 +1,3 @@
-from flask import Flask, request, jsonify, render_template
 from langchain.document_loaders import DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
@@ -18,15 +17,20 @@ import os
 from dotenv import load_dotenv
 from pinecone import Pinecone, PineconeException
 
-app = Flask(__name__)
+# Path to input documents
+DATA_PATH1 = "fallout_content/PDFs"
+DATA_PATH2 = "fallout_content/Nukapedia"
+DATA_PATH3 = "fallout_content/YouTube_oxhorn"
+DATA_PATH4 = "fallout_content/YouTube_spanish"
+
+embeddings = OpenAIEmbeddings()
+# prompt, model, parser
+
+
 load_dotenv()
 
-# Environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-
-# Initialize OpenAI and Pinecone
-embeddings = OpenAIEmbeddings()
 model = ChatOpenAI(openai_api_key=OPENAI_API_KEY, model="gpt-3.5-turbo")
 parser = StrOutputParser()
 
@@ -40,12 +44,6 @@ Question: {question}
 """
 
 prompt = ChatPromptTemplate.from_template(template)
-
-# Paths to documents
-DATA_PATH1 = "fallout_content/PDFs"
-DATA_PATH2 = "fallout_content/Nukapedia"
-DATA_PATH3 = "fallout_content/YouTube_oxhorn"
-DATA_PATH4 = "fallout_content/YouTube_spanish"
 
 
 # Load documents from directory
@@ -74,22 +72,26 @@ def generate_data():
     chunks = split_text(documents)
     return chunks
 
-
 chunks = generate_data()
 
+
 try:
-    pinecone = Pinecone(api_key=PINECONE_API_KEY, timeout=60)
-    index_name = "fallout2"
+    pinecone = Pinecone(
+        api_key=PINECONE_API_KEY, timeout=60
+    )  # Adjust timeout as needed
+    index_name = "fallout2"  # Define your Pinecone index name
+    # Assuming PineconeVectorStore.from_documents is a valid method
     index = PineconeVectorStore.from_documents(
         chunks, embeddings, index_name=index_name
     )
+
     print(f"Successfully indexed documents in {index_name}")
 except PineconeException as e:
     print(f"An error occurred with Pinecone: {e}")
-    index = None
+    index = None  # Ensure index is None if there was an error
 except Exception as e:
     print(f"An unexpected error occurred: {e}")
-    index = None
+    index = None  # Ensure index is None if there was an error
 
 chain = (
     {"context": index.as_retriever(), "question": RunnablePassthrough()}
@@ -97,22 +99,25 @@ chain = (
     | model
     | parser
 )
+chain.invoke("Who is Harold?")
+chain.invoke("How to make Curie human?")
 
 
-@app.route("/")
-def home():
-    print("Hello")
-    return render_template("index.html")
+# Function to invoke the chain with a given question
+def ask_question(question):
+    return chain.invoke(question)
 
 
-@app.route("/ask", methods=["POST"])
-def ask():
-    user_question = request.form["question"]
+# Main loop
+while True:
+    # Get user input
+    user_question = input("Please enter your question (or type 'exit' to quit): ")
+
+    # Check if the user wants to exit the loop
     if user_question.lower() == "exit":
-        return jsonify({"response": "Exiting the question loop. Goodbye!"})
-    response = chain.invoke(user_question)
-    return jsonify({"response": response})
+        print("Exiting the question loop. Goodbye!")
+        break
 
-
-if __name__ == "__main__":
-    app.run(debug=True)
+    # Invoke the chain with the user's question and print the result
+    response = ask_question(user_question)
+    print(response)
