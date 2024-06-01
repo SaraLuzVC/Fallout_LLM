@@ -1,9 +1,12 @@
-fallout_content/Nukapedia
-fallout_content/YouTube_oxhorn
-fallout_content/YouTube_spanish
-fallout_content/PDFs
+
 
 .streamlit/
 
 .venv
 .env
+fallout_content/.ipynb_checkpoints
+fallout_content/Nukapedia
+fallout_content/PDFs/Fallout 3 (GOTY) - Official Prima Guide [2009].pdf
+fallout_content/PDFs/Fallout_manual_English.pdf
+fallout_content/PDFs/Fallout 3 (GOTY) - Official Prima Guide [2009].pdf
+fallout_content/PDFs/Fallout 3 (GOTY) - Official Prima Guide [2009].pdf
